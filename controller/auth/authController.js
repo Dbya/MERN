@@ -1,6 +1,7 @@
 const User = require("../../model/userModel")
 const bcrypt=require("bcryptjs")
 const jwt=require("jsonwebtoken")
+const sendEmail = require("../../services/sendEmail")
 
 exports.registerUser = async(req,res)=>{
     const{email,password,phoneNumber,username}=req.body
@@ -67,4 +68,35 @@ exports.loginUser = async(req,res)=>{
         })
     }
 
+}
+
+exports.forgetPassword = async(req,res) =>{
+    const{email} = req.body;
+    if(!email){
+        return res.status(400).json({
+            message:"please provide email"
+        })
+    }
+
+    //emial  registerd xa ki xainaw check garni
+    const userExist= await User.find({userEmail:email})
+    if(userExist.length == 0){
+        return res.status(400).json({
+            messsage:"Email not registered yet"
+        })
+    }
+
+    //otp send garni tyo emial ma
+    const otp=Math.floor(Math.random() * 10000)
+    userExist[0].otp=otp
+    await userExist[0].save()
+    await sendEmail({
+        email:email,
+        subject:"Restore your password with this otp",
+        message:` from next time dont forget your password : This is your otp ${otp} `,
+
+    })
+    res.status(200).json({
+        message:"OTP sent successfully"
+    })
 }
