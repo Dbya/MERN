@@ -100,3 +100,65 @@ exports.forgetPassword = async(req,res) =>{
         message:"OTP sent successfully"
     })
 }
+
+//verify otp
+exports.verifyOtp= async (req,res)=>{
+    const{email,otp} = req.body
+    if(!email || !otp){
+        return res.status(400).json({
+            message:"please provide email,otp"
+        })
+    }
+
+    //chcek garni if opt thik xa ki xainaw tyo email ko 
+    const userExists = await User.find({userEmail:email})
+    if(userExists.length == 0){
+        return res.status(404).json({
+            message:"Email is not registered"
+        })
+    }
+
+    if(userExists[0].otp !== otp){
+         res.status(400).json({
+            message:"Invalid otp"
+        })
+    }else{
+        //opt lai dispose gardini taki tei otp arko patak use nahgos vanera 
+        userExists[0].otp = undefined
+        await userExists[0].save()
+        res.status(200).json({
+            mesage:"otp is correct"
+        })
+    }
+
+}
+
+exports.resetPassword= async(req,res)=>{
+    const {email,newPassword,confirmPassword}=req.body
+    if(!email || !newPassword || !confirmPassword){
+        return res.status(400).json({
+            message:" please provide email password and confirm password"
+        })
+    }
+    
+    if(newPassword !== confirmPassword){
+        return  res.status(400).json({
+            mesage:"new password and confirm pasword doesnt match "
+        })
+
+    }
+
+    const userExists= await User.find({userEmail:email})
+    if(userExists.length == 0){
+        return res.status(404).json({
+            message:"yo  emial registered nai vako xainaw ajhai samma"
+        })
+    }
+    userExists[0].userPassword = bcrypt.hashSync(newPassword,10)
+    await userExists[0].save()
+
+    res.status(200).json({
+        message:"password changed successfully"
+    })
+
+}
